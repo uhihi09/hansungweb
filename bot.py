@@ -79,7 +79,7 @@ async def sync_members(ctx):
                     logger.error(f"Error processing member {member.display_name}: {e}")
 
     # 완료 메시지
-    await status_msg.edit(content=f"멤버 동기화 완료!\n추가된 멤버: {added_count}\n업데이트된 멤버: {updated_count}\n\n웹사이트에서 확인하실 수 있습니다: http://localhost:5000")
+    await status_msg.edit(content=f"멤버 동기화 완료!\n추가된 멤버: {added_count}\n업데이트된 멤버: {updated_count}\n\n웹사이트에서 확인하실 수 있습니다: https://hansungweb.onrender.com")
 
 @bot.command(name='update_profile')
 async def update_profile(ctx, member: discord.Member, *, description: str):
