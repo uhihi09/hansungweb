@@ -1,94 +1,54 @@
-import sqlite3
+import os
+from pymongo import MongoClient
+from dotenv import load_dotenv
 from datetime import datetime
 
+load_dotenv()
+MONGODB_URI = os.getenv('MONGODB_URI')
+DB_NAME = os.getenv('MONGODB_DB', 'hansung')
+
+client = MongoClient(MONGODB_URI)
+db = client[DB_NAME]
+members = db['members']
+profile_edits = db['profile_edits']
+
 def init_db():
-    conn = sqlite3.connect('hansung.db')
-    c = conn.cursor()
-    
-    # 멤버 테이블 생성
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS members (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            discord_id TEXT UNIQUE NOT NULL,
-            nickname TEXT NOT NULL,
-            description TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # 프로필 수정 기록 테이블 생성
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS profile_edits (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            member_id INTEGER,
-            editor_discord_id TEXT NOT NULL,
-            edit_content TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (member_id) REFERENCES members (id)
-        )
-    ''')
-    
-    conn.commit()
-    conn.close()
+    # MongoDB는 스키마가 없으므로 초기화 불필요
+    pass
 
 def add_member(discord_id, nickname, description=""):
-    conn = sqlite3.connect('hansung.db')
-    c = conn.cursor()
-    try:
-        c.execute('''
-            INSERT INTO members (discord_id, nickname, description)
-            VALUES (?, ?, ?)
-        ''', (discord_id, nickname, description))
-        conn.commit()
-        return True
-    except sqlite3.IntegrityError:
+    if members.find_one({"discord_id": discord_id}):
         return False
-    finally:
-        conn.close()
+    members.insert_one({
+        "discord_id": discord_id,
+        "nickname": nickname,
+        "description": description,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    })
+    return True
 
 def update_member_profile(discord_id, editor_discord_id, new_description):
-    conn = sqlite3.connect('hansung.db')
-    c = conn.cursor()
-    try:
-        # 멤버 정보 업데이트
-        c.execute('''
-            UPDATE members 
-            SET description = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE discord_id = ?
-        ''', (new_description, discord_id))
-        
-        # 수정 기록 저장
-        c.execute('''
-            INSERT INTO profile_edits (member_id, editor_discord_id, edit_content)
-            SELECT id, ?, ?
-            FROM members
-            WHERE discord_id = ?
-        ''', (editor_discord_id, new_description, discord_id))
-        
-        conn.commit()
+    result = members.update_one(
+        {"discord_id": discord_id},
+        {"$set": {"description": new_description, "updated_at": datetime.utcnow()}}
+    )
+    if result.matched_count:
+        member = members.find_one({"discord_id": discord_id})
+        profile_edits.insert_one({
+            "member_id": member["_id"],
+            "editor_discord_id": editor_discord_id,
+            "edit_content": new_description,
+            "created_at": datetime.utcnow()
+        })
         return True
-    except Exception as e:
-        print(f"Error updating profile: {e}")
-        return False
-    finally:
-        conn.close()
+    return False
 
 def get_all_members():
-    conn = sqlite3.connect('hansung.db')
-    c = conn.cursor()
-    c.execute('SELECT * FROM members ORDER BY nickname')
-    members = c.fetchall()
-    conn.close()
-    return members
+    return list(members.find().sort("nickname", 1))
 
 def get_member(discord_id):
-    conn = sqlite3.connect('hansung.db')
-    c = conn.cursor()
-    c.execute('SELECT * FROM members WHERE discord_id = ?', (discord_id,))
-    member = c.fetchone()
-    conn.close()
-    return member
+    return members.find_one({"discord_id": discord_id})
 
 if __name__ == "__main__":
     init_db() 

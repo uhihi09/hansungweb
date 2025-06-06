@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ member.name }}의 프로필 - 한성 위키</title>
+    <title>{{ member.nickname }}의 프로필 - 한성 위키</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -21,7 +21,7 @@
 
         <main>
             <div class="profile">
-                <h2>{{ member.name }}의 프로필</h2>
+                <h2>{{ member.nickname }}의 프로필</h2>
                 <div class="profile-content">
                     <div class="profile-description">
                         {{ member.description | safe }}
