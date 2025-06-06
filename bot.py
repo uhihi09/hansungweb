@@ -24,11 +24,6 @@ async def on_ready():
     logger.info(f'현재 접속된 서버: {[guild.name for guild in bot.guilds]}')
 
 @bot.event
-async def on_message(message):
-    logger.info(f'메시지 수신: {message.content} from {message.author}')
-    await bot.process_commands(message)
-
-@bot.event
 async def on_member_join(member):
     """새로운 멤버가 서버에 들어올 때 자동으로 추가"""
     if not member.bot:  # 봇 제외
@@ -37,7 +32,7 @@ async def on_member_join(member):
             db.add_member(
                 str(member.id),
                 member.display_name,
-                f"닉네임: {member.display_name}\n역할: {', '.join([role.name for role in member.roles if role.name != '@everyone'])}"
+                ""  # 빈 설명으로 추가
             )
             print(f"새로운 멤버 추가됨: {member.display_name}")
         except Exception as e:
@@ -69,7 +64,7 @@ async def sync_members(ctx):
                         db.update_member_profile(
                             str(member.id),
                             str(bot.user.id),
-                            f"닉네임: {member.display_name}\n역할: {', '.join([role.name for role in member.roles if role.name != '@everyone'])}"
+                            ""  # 빈 설명으로 업데이트
                         )
                         updated_count += 1
                     else:
@@ -77,14 +72,14 @@ async def sync_members(ctx):
                         db.add_member(
                             str(member.id),
                             member.display_name,
-                            f"닉네임: {member.display_name}\n역할: {', '.join([role.name for role in member.roles if role.name != '@everyone'])}"
+                            ""  # 빈 설명으로 추가
                         )
                         added_count += 1
                 except Exception as e:
-                    print(f"Error processing member {member.display_name}: {e}")
+                    logger.error(f"Error processing member {member.display_name}: {e}")
 
     # 완료 메시지
-    await status_msg.edit(content=f"멤버 동기화 완료!\n추가된 멤버: {added_count}\n업데이트된 멤버: {updated_count}\n\n웹사이트에서 확인하실 수 있습니다: https://hansungweb.onrender.com")
+    await status_msg.edit(content=f"멤버 동기화 완료!\n추가된 멤버: {added_count}\n업데이트된 멤버: {updated_count}\n\n웹사이트에서 확인하실 수 있습니다: http://localhost:5000")
 
 @bot.command(name='update_profile')
 async def update_profile(ctx, member: discord.Member, *, description: str):

@@ -3,57 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>한성 위키 - 우리들의 디스코드 공간</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <title>한성 위키</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <header>
-        <div class="header-container">
-            <div class="logo">한성 위키</div>
+    <div class="container">
+        <header>
+            <h1>한성 위키</h1>
             <nav>
-                <ul>
-                    <li><a href="/">홈</a></li>
-                    <li><a href="#">서버 규칙</a></li>
-                    <li><a href="#">채널 소개</a></li>
-                    <li><a href="#">멤버 소개</a></li>
-                    <li><a href="#">이벤트</a></li>
-                </ul>
+                <a href="/">홈</a>
+                <a href="/rules">서버 규칙</a>
+                <a href="/channels">채널 소개</a>
+                <a href="/members">멤버 소개</a>
+                <a href="/events">이벤트</a>
             </nav>
-        </div>
-    </header>
+        </header>
 
-    <main>
-        <section class="welcome-section">
-            <h1>한성 디스코드 서버에 오신 것을 환영합니다!</h1>
-            <p>우리들의 특별한 공간, 한성 디스코드 서버입니다. 함께 대화하고, 게임하고, 추억을 만들어보세요.</p>
-        </section>
-
-        <section class="members-section">
-            <h2>서버 멤버</h2>
-            <div class="members-grid">
-                {% for member in members %}
-                <div class="member-card">
-                    <h3>{{ member[2] }}</h3>
-                    <p class="member-description">{{ member[3][:100] + '...' if member[3] and member[3]|length > 100 else member[3] or '아직 작성된 소개가 없습니다.' }}</p>
-                    <a href="{{ url_for('member_profile', discord_id=member[1]) }}" class="view-profile">프로필 보기</a>
+        <main>
+            <div class="members-list">
+                <h2>서버 멤버</h2>
+                <div class="members-grid">
+                    {% for member in members %}
+                    <div class="member-card">
+                        <h3>{{ member.name }}</h3>
+                        <a href="{{ url_for('member_profile', discord_id=member.discord_id) }}" class="button">프로필 보기</a>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
             </div>
-        </section>
-    </main>
+        </main>
 
-    <footer>
-        <div class="footer-container">
-            <div class="footer-links">
-                <a href="#">서버 규칙</a>
-                <a href="#">FAQ</a>
-                <a href="#">문의하기</a>
-                <a href="#">개인정보처리방침</a>
-            </div>
-            <div class="copyright">
-                © 2024 한성 디스코드 서버. All rights reserved.
-            </div>
-        </div>
-    </footer>
+        <footer>
+            <p>© 2024 한성 디스코드 서버. All rights reserved.</p>
+        </footer>
+    </div>
 </body>
 </html> 
