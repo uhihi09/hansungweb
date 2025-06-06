@@ -3,6 +3,11 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 import database as db
+import logging
+
+# 로깅 설정
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('discord')
 
 # .env 파일 로드
 load_dotenv()
@@ -10,11 +15,18 @@ load_dotenv()
 # 봇 설정
 intents = discord.Intents.default()
 intents.members = True  # 멤버 정보 접근 권한
+intents.message_content = True  # 메시지 내용 접근 권한
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 @bot.event
 async def on_ready():
-    print(f'{bot.user} 봇이 시작되었습니다!')
+    logger.info(f'{bot.user} 봇이 시작되었습니다!')
+    logger.info(f'현재 접속된 서버: {[guild.name for guild in bot.guilds]}')
+
+@bot.event
+async def on_message(message):
+    logger.info(f'메시지 수신: {message.content} from {message.author}')
+    await bot.process_commands(message)
 
 @bot.event
 async def on_member_join(member):
@@ -42,10 +54,12 @@ async def sync_members(ctx):
     added_count = 0
     updated_count = 0
 
+    # 시작 메시지
+    status_msg = await ctx.send("멤버 동기화를 시작합니다...")
+
     async with ctx.typing():
         for member in guild.members:
             if not member.bot:  # 봇 제외
-                # 데이터베이스에 멤버 추가 또는 업데이트
                 try:
                     # 기존 멤버 확인
                     existing_member = db.get_member(str(member.id))
@@ -69,7 +83,8 @@ async def sync_members(ctx):
                 except Exception as e:
                     print(f"Error processing member {member.display_name}: {e}")
 
-    await ctx.send(f"멤버 동기화 완료!\n추가된 멤버: {added_count}\n업데이트된 멤버: {updated_count}")
+    # 완료 메시지
+    await status_msg.edit(content=f"멤버 동기화 완료!\n추가된 멤버: {added_count}\n업데이트된 멤버: {updated_count}\n\n웹사이트에서 확인하실 수 있습니다: {os.getenv('WEBSITE_URL', 'http://localhost:5000')}")
 
 @bot.command(name='update_profile')
 async def update_profile(ctx, member: discord.Member, *, description: str):
