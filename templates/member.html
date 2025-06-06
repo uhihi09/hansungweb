@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ member[2] }}의 프로필 - 한성 위키</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <div class="logo">한성 위키</div>
+            <nav>
+                <ul>
+                    <li><a href="/">홈</a></li>
+                    <li><a href="#">서버 규칙</a></li>
+                    <li><a href="#">채널 소개</a></li>
+                    <li><a href="#">멤버 소개</a></li>
+                    <li><a href="#">이벤트</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="profile-container">
+            <div class="profile-header">
+                <h1>{{ member[2] }}의 프로필</h1>
+                <p class="discord-id">Discord ID: {{ member[1] }}</p>
+            </div>
+            
+            <div class="profile-content">
+                <div class="description-section">
+                    <h2>소개</h2>
+                    <p class="description">{{ member[3] or '아직 작성된 소개가 없습니다.' }}</p>
+                </div>
+                
+                <div class="edit-section">
+                    <h3>프로필 수정하기</h3>
+                    <form id="editForm" class="edit-form">
+                        <input type="hidden" name="discord_id" value="{{ member[1] }}">
+                        <div class="form-group">
+                            <label for="editor_id">당신의 Discord ID:</label>
+                            <input type="text" id="editor_id" name="editor_discord_id" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new_description">새로운 소개:</label>
+                            <textarea id="new_description" name="description" rows="4" required></textarea>
+                        </div>
+                        <button type="submit" class="edit-button">수정하기</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-links">
+                <a href="#">서버 규칙</a>
+                <a href="#">FAQ</a>
+                <a href="#">문의하기</a>
+                <a href="#">개인정보처리방침</a>
+            </div>
+            <div class="copyright">
+                © 2024 한성 디스코드 서버. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('editForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = {
+                discord_id: formData.get('discord_id'),
+                editor_discord_id: formData.get('editor_discord_id'),
+                description: formData.get('description')
+            };
+
+            try {
+                const response = await fetch('/api/update_profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('프로필이 성공적으로 수정되었습니다!');
+                    location.reload();
+                } else {
+                    alert('프로필 수정에 실패했습니다: ' + (result.error || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                alert('오류가 발생했습니다: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html> 
