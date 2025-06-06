@@ -13,9 +13,7 @@ logger = logging.getLogger('discord')
 load_dotenv()
 
 # 봇 설정
-intents = discord.Intents.default()
-intents.members = True  # 멤버 정보 접근 권한
-intents.message_content = True  # 메시지 내용 접근 권한
+intents = discord.Intents.all()  # 모든 인텐트 활성화
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 @bot.event
@@ -38,7 +36,7 @@ async def on_member_join(member):
         except Exception as e:
             print(f"멤버 추가 중 오류 발생: {e}")
 
-@bot.command(name='sync_members')
+@bot.command()
 async def sync_members(ctx):
     """서버의 모든 멤버를 데이터베이스에 동기화합니다."""
     if not ctx.author.guild_permissions.administrator:
@@ -81,7 +79,7 @@ async def sync_members(ctx):
     # 완료 메시지
     await status_msg.edit(content=f"멤버 동기화 완료!\n추가된 멤버: {added_count}\n업데이트된 멤버: {updated_count}\n\n웹사이트에서 확인하실 수 있습니다: https://hansungweb.onrender.com")
 
-@bot.command(name='update_profile')
+@bot.command()
 async def update_profile(ctx, member: discord.Member, *, description: str):
     """특정 멤버의 프로필을 업데이트합니다."""
     try:
