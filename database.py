@@ -1,116 +1,114 @@
+import discord
+from discord.ext import commands
 import os
-from pymongo import MongoClient
 from dotenv import load_dotenv
+import sqlite3
 from datetime import datetime
 
 load_dotenv()
-MONGODB_URI = os.getenv('MONGODB_URI')
-DB_NAME = os.getenv('MONGODB_DB', 'hansung')
 
-client = MongoClient(MONGODB_URI)
-db = client[DB_NAME]
-members = db['members']
-profile_edits = db['profile_edits']
-
-def init_db():
-    # MongoDB는 스키마가 없으므로 초기화 불필요
-    pass
-
-def add_member(discord_id, nickname, description=""):
-    if members.find_one({"discord_id": discord_id}):
-        return False
-    members.insert_one({
-        "discord_id": discord_id,
-        "nickname": nickname,
-        "description": description,
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow()
-    })
-    return True
-
-def update_member_profile(discord_id, editor_discord_id, new_description):
-    result = members.update_one(
-        {"discord_id": discord_id},
-        {"$set": {"description": new_description, "updated_at": datetime.utcnow()}}
-    )
-    if result.matched_count:
-        member = members.find_one({"discord_id": discord_id})
-        profile_edits.insert_one({
-            "member_id": member["_id"],
-            "editor_discord_id": editor_discord_id,
-            "edit_content": new_description,
-            "created_at": datetime.utcnow()
-        })
-        return True
-    return False
-
-def get_all_members():
-    return list(members.find().sort("nickname", 1))
-
-def get_member(discord_id):
-    return members.find_one({"discord_id": discord_id})
+intents = discord.Intents.default()
+intents.members = True
+intents.message_content = True
 
 class Database:
     def __init__(self):
-        self.client = MongoClient(os.getenv('MONGODB_URI'))
-        self.db = self.client[os.getenv('MONGODB_DB', 'hansung')]
-        self.members = self.db.members
-        self.profiles = self.db.profiles  # 프로필 컬렉션 추가
-
+        self.bot = commands.Bot(command_prefix='!', intents=intents)
+        self.bot.event(self.on_ready)
+        self.conn = sqlite3.connect('hansung.db')
+        self.create_tables()
+    
+    def create_tables(self):
+        cursor = self.conn.cursor()
+        
+        # 멤버 테이블 생성
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS members (
+            discord_id TEXT PRIMARY KEY,
+            nickname TEXT,
+            role TEXT,
+            status TEXT,
+            last_seen TIMESTAMP
+        )
+        ''')
+        
+        # 프로필 테이블 생성
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS profiles (
+            discord_id TEXT PRIMARY KEY,
+            introduction TEXT,
+            interests TEXT,
+            github TEXT,
+            blog TEXT,
+            FOREIGN KEY (discord_id) REFERENCES members(discord_id)
+        )
+        ''')
+        
+        self.conn.commit()
+    
+    @commands.Cog.listener()
+    async def on_ready(self):
+        print(f'{self.bot.user} has connected to Discord!')
+        await self.update_members()
+    
+    async def update_members(self):
+        guild = self.bot.get_guild(int(os.getenv('GUILD_ID')))
+        if guild:
+            cursor = self.conn.cursor()
+            for member in guild.members:
+                cursor.execute('''
+                INSERT OR REPLACE INTO members (discord_id, nickname, role, status, last_seen)
+                VALUES (?, ?, ?, ?, ?)
+                ''', (
+                    str(member.id),
+                    member.display_name,
+                    '멤버',
+                    str(member.status),
+                    datetime.now()
+                ))
+            self.conn.commit()
+    
     def get_all_members(self):
-        return list(self.members.find().sort("nickname", 1))
-
-    def get_member_by_id(self, member_id):
-        return self.members.find_one({"id": member_id})
-
-    def add_or_update_member(self, member_data):
-        existing_member = self.members.find_one({"discord_id": member_data["discord_id"]})
-        
-        if existing_member:
-            self.members.update_one(
-                {"discord_id": member_data["discord_id"]},
-                {"$set": member_data}
-            )
-            return "updated"
-        else:
-            self.members.insert_one(member_data)
-            return "added"
-
-    def delete_member(self, member_id):
-        result = self.members.delete_one({"id": member_id})
-        return result.deleted_count > 0
-
-    def update_member_role(self, member_id, new_role):
-        result = self.members.update_one(
-            {"id": member_id},
-            {"$set": {"role": new_role}}
-        )
-        return result.modified_count > 0
-
-    def update_member_status(self, member_id, new_status):
-        result = self.members.update_one(
-            {"id": member_id},
-            {"$set": {"status": new_status}}
-        )
-        return result.modified_count > 0
-
-    # 프로필 관련 함수들
-    def get_profile(self, discord_id):
-        return self.profiles.find_one({"discord_id": discord_id})
-
-    def create_or_update_profile(self, discord_id, profile_data):
-        profile_data["discord_id"] = discord_id
-        profile_data["updated_at"] = datetime.utcnow()
-        
-        result = self.profiles.update_one(
-            {"discord_id": discord_id},
-            {"$set": profile_data},
-            upsert=True
-        )
-        return result.modified_count > 0 or result.upserted_id is not None
-
+        cursor = self.conn.cursor()
+        cursor.execute('SELECT * FROM members')
+        return [dict(zip(['discord_id', 'nickname', 'role', 'status', 'last_seen'], row)) 
+                for row in cursor.fetchall()]
+    
+    def get_member_by_id(self, discord_id):
+        cursor = self.conn.cursor()
+        cursor.execute('SELECT * FROM members WHERE discord_id = ?', (discord_id,))
+        row = cursor.fetchone()
+        if row:
+            return dict(zip(['discord_id', 'nickname', 'role', 'status', 'last_seen'], row))
+        return None
+    
     def get_all_profiles(self):
-        return list(self.profiles.find().sort("updated_at", -1))
+        cursor = self.conn.cursor()
+        cursor.execute('SELECT * FROM profiles')
+        return [dict(zip(['discord_id', 'introduction', 'interests', 'github', 'blog'], row)) 
+                for row in cursor.fetchall()]
+    
+    def get_profile(self, discord_id):
+        cursor = self.conn.cursor()
+        cursor.execute('SELECT * FROM profiles WHERE discord_id = ?', (discord_id,))
+        row = cursor.fetchone()
+        if row:
+            return dict(zip(['discord_id', 'introduction', 'interests', 'github', 'blog'], row))
+        return None
+    
+    def create_or_update_profile(self, discord_id, profile_data):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+        INSERT OR REPLACE INTO profiles (discord_id, introduction, interests, github, blog)
+        VALUES (?, ?, ?, ?, ?)
+        ''', (
+            discord_id,
+            profile_data.get('introduction', ''),
+            profile_data.get('interests', ''),
+            profile_data.get('github', ''),
+            profile_data.get('blog', '')
+        ))
+        self.conn.commit()
 
 if __name__ == "__main__":
-    init_db() 
+    db = Database() 

@@ -2,11 +2,21 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 from database import Database
 import os
 from dotenv import load_dotenv
+import threading
 
 load_dotenv()
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your-secret-key')  # 세션을 위한 시크릿 키
 db = Database()
+
+# Discord 봇을 백그라운드에서 실행
+def run_bot():
+    db.bot.run(os.getenv('DISCORD_TOKEN'))
+
+# 봇 실행을 위한 스레드 시작
+bot_thread = threading.Thread(target=run_bot)
+bot_thread.daemon = True  # 메인 프로그램이 종료되면 봇도 종료
+bot_thread.start()
 
 @app.route('/')
 def index():

@@ -1,35 +1,46 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
             <div class="card">
-                <div class="card-header">
-                    <h2>{{ member.nickname }}의 프로필</h2>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">{{ member.nickname }}의 프로필</h2>
+                    <a href="{{ url_for('edit_profile', discord_id=member.discord_id) }}" class="btn btn-primary">프로필 작성하기</a>
                 </div>
                 <div class="card-body">
                     {% if profile %}
-                        <h4>자기소개</h4>
-                        <p>{{ profile.introduction }}</p>
-                        
-                        <h4>관심사</h4>
-                        <p>{{ profile.interests }}</p>
-                        
-                        {% if profile.github %}
-                        <h4>GitHub</h4>
-                        <p><a href="{{ profile.github }}" target="_blank">{{ profile.github }}</a></p>
-                        {% endif %}
-                        
-                        {% if profile.blog %}
-                        <h4>블로그</h4>
-                        <p><a href="{{ profile.blog }}" target="_blank">{{ profile.blog }}</a></p>
-                        {% endif %}
-                        
-                        <a href="{{ url_for('edit_profile', discord_id=member.discord_id) }}" class="btn btn-primary">프로필 수정</a>
+                        <div class="mb-4">
+                            <h4>자기소개</h4>
+                            <p>{{ profile.introduction or '작성된 자기소개가 없습니다.' }}</p>
+                        </div>
+                        <div class="mb-4">
+                            <h4>관심사</h4>
+                            <p>{{ profile.interests or '작성된 관심사가 없습니다.' }}</p>
+                        </div>
+                        <div class="mb-4">
+                            <h4>GitHub</h4>
+                            <p>
+                                {% if profile.github %}
+                                    <a href="{{ profile.github }}" target="_blank" class="text-decoration-none">{{ profile.github }}</a>
+                                {% else %}
+                                    작성된 GitHub 링크가 없습니다.
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="mb-4">
+                            <h4>블로그</h4>
+                            <p>
+                                {% if profile.blog %}
+                                    <a href="{{ profile.blog }}" target="_blank" class="text-decoration-none">{{ profile.blog }}</a>
+                                {% else %}
+                                    작성된 블로그 링크가 없습니다.
+                                {% endif %}
+                            </p>
+                        </div>
                     {% else %}
-                        <p>아직 작성된 프로필이 없습니다.</p>
-                        <a href="{{ url_for('edit_profile', discord_id=member.discord_id) }}" class="btn btn-primary">프로필 작성하기</a>
+                        <p class="text-center">아직 작성된 프로필이 없습니다.</p>
                     {% endif %}
                 </div>
             </div>

@@ -1,37 +1,35 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
-                    <h2>프로필 {{ '수정' if profile else '작성' }}</h2>
+                    <h2 class="mb-0">{{ member.nickname }}의 프로필 {{ '수정' if profile else '작성' }}</h2>
                 </div>
                 <div class="card-body">
                     <form method="POST">
                         <div class="mb-3">
                             <label for="introduction" class="form-label">자기소개</label>
-                            <textarea class="form-control" id="introduction" name="introduction" rows="4" required>{{ profile.introduction if profile else '' }}</textarea>
+                            <textarea class="form-control" id="introduction" name="introduction" rows="3">{{ profile.introduction if profile else '' }}</textarea>
                         </div>
-                        
                         <div class="mb-3">
                             <label for="interests" class="form-label">관심사</label>
-                            <textarea class="form-control" id="interests" name="interests" rows="3" required>{{ profile.interests if profile else '' }}</textarea>
+                            <textarea class="form-control" id="interests" name="interests" rows="3">{{ profile.interests if profile else '' }}</textarea>
                         </div>
-                        
                         <div class="mb-3">
-                            <label for="github" class="form-label">GitHub 주소</label>
+                            <label for="github" class="form-label">GitHub 링크</label>
                             <input type="url" class="form-control" id="github" name="github" value="{{ profile.github if profile else '' }}">
                         </div>
-                        
                         <div class="mb-3">
-                            <label for="blog" class="form-label">블로그 주소</label>
+                            <label for="blog" class="form-label">블로그 링크</label>
                             <input type="url" class="form-control" id="blog" name="blog" value="{{ profile.blog if profile else '' }}">
                         </div>
-                        
-                        <button type="submit" class="btn btn-primary">저장하기</button>
-                        <a href="{{ url_for('view_profile', discord_id=member.discord_id) }}" class="btn btn-secondary">취소</a>
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('view_profile', discord_id=member.discord_id) }}" class="btn btn-secondary">취소</a>
+                            <button type="submit" class="btn btn-primary">저장하기</button>
+                        </div>
                     </form>
                 </div>
             </div>
