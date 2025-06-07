@@ -158,15 +158,29 @@ class Database:
     def get_discord_profile(self, discord_id):
         """Discord 프로필 정보를 가져옵니다."""
         try:
-            member = self.bot.get_user(int(discord_id))
-            if member:
-                return {
-                    'name': member.name,
-                    'avatar_url': str(member.avatar.url) if member.avatar else None,
-                    'discriminator': member.discriminator,
-                    'created_at': member.created_at.isoformat(),
-                    'is_bot': member.bot
-                }
+            if hasattr(self, 'guild'):
+                member = self.guild.get_member(int(discord_id))
+                if member:
+                    return {
+                        'name': member.name,
+                        'avatar_url': str(member.avatar.url) if member.avatar else str(member.default_avatar.url),
+                        'discriminator': member.discriminator,
+                        'created_at': member.created_at.isoformat(),
+                        'joined_at': member.joined_at.isoformat() if member.joined_at else None,
+                        'nickname': member.nick,
+                        'roles': [role.name for role in member.roles if role.name != "@everyone"],
+                        'is_bot': member.bot
+                    }
+            else:
+                user = self.bot.get_user(int(discord_id))
+                if user:
+                    return {
+                        'name': user.name,
+                        'avatar_url': str(user.avatar.url) if user.avatar else str(user.default_avatar.url),
+                        'discriminator': user.discriminator,
+                        'created_at': user.created_at.isoformat(),
+                        'is_bot': user.bot
+                    }
         except Exception as e:
             print(f"Discord 프로필 가져오기 실패: {e}")
         return None
