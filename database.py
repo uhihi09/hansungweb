@@ -55,7 +55,8 @@ class Database:
             nickname TEXT,
             role TEXT,
             status TEXT,
-            last_seen TIMESTAMP
+            last_seen TIMESTAMP,
+            joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         ''')
         
@@ -66,6 +67,7 @@ class Database:
             introduction TEXT,
             profile_image TEXT,
             incidents TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (discord_id) REFERENCES members(discord_id)
         )
         ''')
@@ -81,13 +83,14 @@ class Database:
         role_name = roles[0] if roles else "멤버"
         
         cursor.execute('''
-        INSERT OR REPLACE INTO members (discord_id, nickname, role, status, last_seen)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT OR REPLACE INTO members (discord_id, nickname, role, status, last_seen, joined_at)
+        VALUES (?, ?, ?, ?, ?, ?)
         ''', (
             str(member_data['id']),
             member_data['display_name'],
             role_name,
             str(member_data.get('status', 'offline')),
+            datetime.now(),
             datetime.now()
         ))
         conn.commit()
@@ -114,13 +117,14 @@ class Database:
                 role_name = roles[0] if roles else "멤버"
                 
                 cursor.execute('''
-                INSERT OR REPLACE INTO members (discord_id, nickname, role, status, last_seen)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO members (discord_id, nickname, role, status, last_seen, joined_at)
+                VALUES (?, ?, ?, ?, ?, ?)
                 ''', (
                     str(member.id),
                     member.display_name,
                     role_name,
                     str(member.status),
+                    datetime.now(),
                     datetime.now()
                 ))
             conn.commit()
@@ -129,7 +133,7 @@ class Database:
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM members')
-        return [dict(zip(['discord_id', 'nickname', 'role', 'status', 'last_seen'], row)) 
+        return [dict(zip(['discord_id', 'nickname', 'role', 'status', 'last_seen', 'joined_at'], row)) 
                 for row in cursor.fetchall()]
     
     def get_member_by_id(self, discord_id):
@@ -138,14 +142,19 @@ class Database:
         cursor.execute('SELECT * FROM members WHERE discord_id = ?', (discord_id,))
         row = cursor.fetchone()
         if row:
-            return dict(zip(['discord_id', 'nickname', 'role', 'status', 'last_seen'], row))
+            return dict(zip(['discord_id', 'nickname', 'role', 'status', 'last_seen', 'joined_at'], row))
         return None
     
     def get_all_profiles(self):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM profiles')
-        return [dict(zip(['discord_id', 'introduction', 'profile_image', 'incidents'], row)) 
+        cursor.execute('''
+        SELECT p.*, m.nickname, m.joined_at 
+        FROM profiles p 
+        JOIN members m ON p.discord_id = m.discord_id 
+        ORDER BY p.updated_at DESC
+        ''')
+        return [dict(zip(['discord_id', 'introduction', 'profile_image', 'incidents', 'updated_at', 'nickname', 'joined_at'], row)) 
                 for row in cursor.fetchall()]
     
     def get_profile(self, discord_id):
@@ -154,15 +163,15 @@ class Database:
         cursor.execute('SELECT * FROM profiles WHERE discord_id = ?', (discord_id,))
         row = cursor.fetchone()
         if row:
-            return dict(zip(['discord_id', 'introduction', 'profile_image', 'incidents'], row))
+            return dict(zip(['discord_id', 'introduction', 'profile_image', 'incidents', 'updated_at'], row))
         return None
     
     def create_or_update_profile(self, discord_id, profile_data):
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute('''
-        INSERT OR REPLACE INTO profiles (discord_id, introduction, profile_image, incidents)
-        VALUES (?, ?, ?, ?)
+        INSERT OR REPLACE INTO profiles (discord_id, introduction, profile_image, incidents, updated_at)
+        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
         ''', (
             discord_id,
             profile_data.get('introduction', ''),
