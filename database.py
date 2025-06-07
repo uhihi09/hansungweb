@@ -25,7 +25,19 @@ class Database:
         async def on_ready():
             print(f'{self.bot.user} 봇이 시작되었습니다!')
             # 서버 ID를 환경 변수에서 가져옴
-            self.guild = self.bot.get_guild(int(os.getenv('DISCORD_GUILD_ID')))
+            guild_id = os.getenv('DISCORD_GUILD_ID')
+            if guild_id:
+                try:
+                    self.guild = self.bot.get_guild(int(guild_id))
+                    if self.guild:
+                        print(f'서버 "{self.guild.name}"에 연결되었습니다.')
+                    else:
+                        print(f'서버 ID {guild_id}를 찾을 수 없습니다.')
+                except ValueError:
+                    print(f'잘못된 서버 ID 형식입니다: {guild_id}')
+            else:
+                print('DISCORD_GUILD_ID가 설정되지 않았습니다. 서버 정보를 가져올 수 없습니다.')
+                self.guild = None
         
         @self.bot.event
         async def on_member_join(member):
@@ -183,7 +195,8 @@ class Database:
     def get_discord_profile(self, discord_id):
         """Discord 프로필 정보를 가져옵니다."""
         try:
-            if hasattr(self, 'guild'):
+            # 서버 멤버 정보 가져오기 시도
+            if hasattr(self, 'guild') and self.guild:
                 member = self.guild.get_member(int(discord_id))
                 if member:
                     return {
@@ -196,16 +209,17 @@ class Database:
                         'roles': [role.name for role in member.roles if role.name != "@everyone"],
                         'is_bot': member.bot
                     }
-            else:
-                user = self.bot.get_user(int(discord_id))
-                if user:
-                    return {
-                        'name': user.name,
-                        'avatar_url': str(user.avatar.url) if user.avatar else str(user.default_avatar.url),
-                        'discriminator': user.discriminator,
-                        'created_at': user.created_at.isoformat(),
-                        'is_bot': user.bot
-                    }
+            
+            # 서버 정보가 없거나 멤버를 찾을 수 없는 경우, 일반 사용자 정보 가져오기
+            user = self.bot.get_user(int(discord_id))
+            if user:
+                return {
+                    'name': user.name,
+                    'avatar_url': str(user.avatar.url) if user.avatar else str(user.default_avatar.url),
+                    'discriminator': user.discriminator,
+                    'created_at': user.created_at.isoformat(),
+                    'is_bot': user.bot
+                }
         except Exception as e:
             print(f"Discord 프로필 가져오기 실패: {e}")
         return None
