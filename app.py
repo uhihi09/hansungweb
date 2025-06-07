@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
-import database as db
+from database import Database
 import os
 from waitress import serve
 from dotenv import load_dotenv
@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your-secret-key')  # 세션을 위한 시크릿 키
+db = Database()
 
 @app.route('/')
 def index():
