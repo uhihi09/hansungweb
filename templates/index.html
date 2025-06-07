@@ -1,41 +1,26 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>한성 위키</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>한성 위키</h1>
-            <nav>
-                <a href="/">홈</a>
-                <a href="/rules">서버 규칙</a>
-                <a href="/channels">채널 소개</a>
-                <a href="/members">멤버 소개</a>
-                <a href="/events">이벤트</a>
-            </nav>
-        </header>
+{% extends "base.html" %}
 
-        <main>
-            <div class="members-list">
-                <h2>서버 멤버</h2>
-                <div class="members-grid">
-                    {% for member in members %}
-                    <div class="member-card">
-                        <h3>{{ member.nickname }}</h3>
-                        <a href="{{ url_for('view_profile', discord_id=member.discord_id) }}" class="button">프로필 보기</a>
-                    </div>
-                    {% endfor %}
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">한성대학교 멤버 목록</h1>
+    <div class="row">
+        {% for member in members %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ member.nickname }}</h5>
+                    <p class="card-text">
+                        학번: {{ member.student_id }}<br>
+                        전공: {{ member.major }}<br>
+                        학년: {{ member.grade }}<br>
+                        역할: {{ member.role }}<br>
+                        상태: {{ member.status }}
+                    </p>
+                    <a href="{{ url_for('view_profile', discord_id=member.discord_id) }}" class="btn btn-primary">프로필 보기</a>
                 </div>
             </div>
-        </main>
-
-        <footer>
-            <p>© 2024 한성 디스코드 서버. All rights reserved.</p>
-        </footer>
+        </div>
+        {% endfor %}
     </div>
-</body>
-</html> 
+</div>
+{% endblock %} 
