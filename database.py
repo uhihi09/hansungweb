@@ -28,6 +28,10 @@ class Database:
         conn = self.get_connection()
         cursor = conn.cursor()
         
+        # 기존 테이블 삭제
+        cursor.execute('DROP TABLE IF EXISTS profiles')
+        cursor.execute('DROP TABLE IF EXISTS members')
+        
         # 멤버 테이블 생성
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS members (
@@ -64,13 +68,17 @@ class Database:
             conn = self.get_connection()
             cursor = conn.cursor()
             for member in guild.members:
+                # 역할 정보 가져오기
+                roles = [role.name for role in member.roles if role.name != "@everyone"]
+                role_name = roles[0] if roles else "멤버"
+                
                 cursor.execute('''
                 INSERT OR REPLACE INTO members (discord_id, nickname, role, status, last_seen)
                 VALUES (?, ?, ?, ?, ?)
                 ''', (
                     str(member.id),
                     member.display_name,
-                    '멤버',
+                    role_name,
                     str(member.status),
                     datetime.now()
                 ))
