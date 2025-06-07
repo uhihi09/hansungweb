@@ -28,7 +28,8 @@ async def on_ready():
                 print(f'서버 "{guild.name}"에 연결되었습니다.')
                 # 모든 멤버 정보 업데이트
                 for member in guild.members:
-                    db.add_member(str(member.id), member.display_name)
+                    avatar_hash = member.avatar.key if member.avatar else None
+                    db.add_member(str(member.id), member.display_name, avatar_hash)
                 print(f"총 {len(guild.members)}명의 멤버 정보를 업데이트했습니다.")
             else:
                 print(f'서버 ID {guild_id}를 찾을 수 없습니다.')
@@ -47,14 +48,16 @@ async def on_ready():
 
 @bot.event
 async def on_member_join(member):
-    db.add_member(str(member.id), member.display_name)
+    avatar_hash = member.avatar.key if member.avatar else None
+    db.add_member(str(member.id), member.display_name, avatar_hash)
     print(f"새 멤버 추가: {member.display_name}")
 
 @bot.event
 async def on_member_update(before, after):
-    if before.display_name != after.display_name:
-        db.update_member_name(str(after.id), after.display_name)
-        print(f"멤버 닉네임 업데이트: {before.display_name} -> {after.display_name}")
+    if before.display_name != after.display_name or before.avatar != after.avatar:
+        avatar_hash = after.avatar.key if after.avatar else None
+        db.update_member_name(str(after.id), after.display_name, avatar_hash)
+        print(f"멤버 정보 업데이트: {before.display_name} -> {after.display_name}")
 
 @bot.event
 async def on_member_remove(member):

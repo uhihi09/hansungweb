@@ -8,29 +8,15 @@
         <div class="col-md-4 mb-4">
             <div class="card h-100">
                 <div class="card-body text-center">
-                    {% set discord_profile = get_discord_profile(member.discord_id) %}
-                    
                     <div class="mb-3">
-                        {% if discord_profile and discord_profile.avatar_url %}
-                        <img src="{{ discord_profile.avatar_url }}" alt="Discord 프로필" class="rounded-circle mb-2" style="width: 100px; height: 100px; object-fit: cover;">
-                        {% else %}
-                        <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="기본 프로필" class="rounded-circle mb-2" style="width: 100px; height: 100px; object-fit: cover;">
-                        {% endif %}
+                        <img src="https://cdn.discordapp.com/avatars/{{ member.discord_id }}/{{ member.avatar_hash }}.png" 
+                             alt="Discord 프로필" 
+                             class="rounded-circle mb-2" 
+                             style="width: 100px; height: 100px; object-fit: cover;"
+                             onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
                         
-                        {% if discord_profile %}
-                        <h5 class="card-title mb-1">{{ discord_profile.nickname or discord_profile.name }}</h5>
-                        <p class="text-muted small mb-2">{{ discord_profile.name }}#{{ discord_profile.discriminator }}</p>
-                        {% if discord_profile.roles %}
-                        <div class="mb-2">
-                            {% for role in discord_profile.roles %}
-                            <span class="badge bg-secondary me-1">{{ role }}</span>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        {% else %}
-                        <h5 class="card-title">{{ member.nickname }}</h5>
-                        {% endif %}
-
+                        <h5 class="card-title mb-1">{{ member.nickname }}</h5>
+                        
                         {% if member.updated_at %}
                         <p class="text-muted small">
                             <i class="fas fa-clock"></i> 최근 업데이트: {{ member.updated_at.split('T')[0] }}

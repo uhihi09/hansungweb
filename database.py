@@ -82,6 +82,7 @@ class Database:
         CREATE TABLE IF NOT EXISTS members (
             discord_id TEXT PRIMARY KEY,
             nickname TEXT,
+            avatar_hash TEXT,
             joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         ''')
@@ -100,18 +101,18 @@ class Database:
         
         conn.commit()
     
-    def add_member(self, discord_id, nickname):
+    def add_member(self, discord_id, nickname, avatar_hash=None):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute('INSERT OR IGNORE INTO members (discord_id, nickname) VALUES (?, ?)',
-                      (str(discord_id), nickname))
+        cursor.execute('INSERT OR REPLACE INTO members (discord_id, nickname, avatar_hash) VALUES (?, ?, ?)',
+                      (str(discord_id), nickname, avatar_hash))
         conn.commit()
     
-    def update_member_name(self, discord_id, new_name):
+    def update_member_name(self, discord_id, new_name, avatar_hash=None):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute('UPDATE members SET nickname = ? WHERE discord_id = ?',
-                      (new_name, str(discord_id)))
+        cursor.execute('UPDATE members SET nickname = ?, avatar_hash = ? WHERE discord_id = ?',
+                      (new_name, avatar_hash, str(discord_id)))
         conn.commit()
     
     def get_all_members(self):
@@ -125,7 +126,7 @@ class Database:
         LEFT JOIN profiles p ON m.discord_id = p.discord_id 
         ORDER BY p.updated_at DESC NULLS LAST
         ''')
-        return [dict(zip(['discord_id', 'nickname', 'joined_at', 'updated_at'], row)) 
+        return [dict(zip(['discord_id', 'nickname', 'avatar_hash', 'joined_at', 'updated_at'], row)) 
                 for row in cursor.fetchall()]
     
     def get_member_by_id(self, discord_id):
@@ -139,7 +140,7 @@ class Database:
         ''', (discord_id,))
         row = cursor.fetchone()
         if row:
-            return dict(zip(['discord_id', 'nickname', 'joined_at', 'updated_at'], row))
+            return dict(zip(['discord_id', 'nickname', 'avatar_hash', 'joined_at', 'updated_at'], row))
         return None
     
     def get_all_profiles(self):
