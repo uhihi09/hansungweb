@@ -29,21 +29,32 @@ async def on_ready():
                 # 모든 멤버 정보 업데이트
                 for member in guild.members:
                     db.add_member(str(member.id), member.display_name)
+                print(f"총 {len(guild.members)}명의 멤버 정보를 업데이트했습니다.")
             else:
                 print(f'서버 ID {guild_id}를 찾을 수 없습니다.')
+                print('서버 ID가 올바른지 확인해주세요.')
         except ValueError:
             print(f'잘못된 서버 ID 형식입니다: {guild_id}')
+            print('서버 ID는 숫자만 포함해야 합니다.')
     else:
-        print('DISCORD_GUILD_ID가 설정되지 않았습니다. 서버 정보를 가져올 수 없습니다.')
+        print('DISCORD_GUILD_ID가 설정되지 않았습니다.')
+        print('다음 단계를 따라 서버 ID를 설정해주세요:')
+        print('1. Discord 설정에서 개발자 모드를 활성화합니다.')
+        print('2. 서버 이름을 우클릭하고 "ID 복사"를 선택합니다.')
+        print('3. .env 파일에 다음 줄을 추가합니다:')
+        print('   DISCORD_GUILD_ID=복사한_서버_ID')
+        print('4. 봇을 다시 시작합니다.')
 
 @bot.event
 async def on_member_join(member):
     db.add_member(str(member.id), member.display_name)
+    print(f"새 멤버 추가: {member.display_name}")
 
 @bot.event
 async def on_member_update(before, after):
     if before.display_name != after.display_name:
         db.update_member_name(str(after.id), after.display_name)
+        print(f"멤버 닉네임 업데이트: {before.display_name} -> {after.display_name}")
 
 @bot.event
 async def on_member_remove(member):
