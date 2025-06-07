@@ -19,42 +19,31 @@ db = Database()
 @bot.event
 async def on_ready():
     print(f'{bot.user} 봇이 시작되었습니다!')
-    # 서버의 모든 멤버 정보를 MongoDB에 저장
-    guild = bot.get_guild(int(os.getenv('GUILD_ID')))
-    if guild:
-        for member in guild.members:
-            member_data = {
-                'id': member.id,
-                'display_name': member.display_name,
-                'roles': member.roles,
-                'status': member.status
-            }
-            db.add_or_update_member(member_data)
-            print(f"멤버 추가/업데이트: {member.display_name}")
+    # 서버 ID를 환경 변수에서 가져옴
+    guild_id = os.getenv('DISCORD_GUILD_ID')
+    if guild_id:
+        try:
+            guild = bot.get_guild(int(guild_id))
+            if guild:
+                print(f'서버 "{guild.name}"에 연결되었습니다.')
+                # 모든 멤버 정보 업데이트
+                for member in guild.members:
+                    db.add_member(str(member.id), member.display_name)
+            else:
+                print(f'서버 ID {guild_id}를 찾을 수 없습니다.')
+        except ValueError:
+            print(f'잘못된 서버 ID 형식입니다: {guild_id}')
+    else:
+        print('DISCORD_GUILD_ID가 설정되지 않았습니다. 서버 정보를 가져올 수 없습니다.')
 
 @bot.event
 async def on_member_join(member):
-    if not member.bot:
-        member_data = {
-            'id': member.id,
-            'display_name': member.display_name,
-            'roles': member.roles,
-            'status': member.status
-        }
-        db.add_or_update_member(member_data)
-        print(f"새 멤버 추가: {member.display_name}")
+    db.add_member(str(member.id), member.display_name)
 
 @bot.event
 async def on_member_update(before, after):
-    if not after.bot:
-        member_data = {
-            'id': after.id,
-            'display_name': after.display_name,
-            'roles': after.roles,
-            'status': after.status
-        }
-        db.add_or_update_member(member_data)
-        print(f"멤버 정보 업데이트: {after.display_name}")
+    if before.display_name != after.display_name:
+        db.update_member_name(str(after.id), after.display_name)
 
 @bot.event
 async def on_member_remove(member):
