@@ -55,6 +55,7 @@ class Database:
         self.client = MongoClient(os.getenv('MONGODB_URI'))
         self.db = self.client[os.getenv('MONGODB_DB', 'hansung')]
         self.members = self.db.members
+        self.profiles = self.db.profiles  # 프로필 컬렉션 추가
 
     def get_all_members(self):
         return list(self.members.find().sort("nickname", 1))
@@ -63,18 +64,15 @@ class Database:
         return self.members.find_one({"id": member_id})
 
     def add_or_update_member(self, member_data):
-        # discord_id로 멤버 찾기
         existing_member = self.members.find_one({"discord_id": member_data["discord_id"]})
         
         if existing_member:
-            # 기존 멤버 업데이트
             self.members.update_one(
                 {"discord_id": member_data["discord_id"]},
                 {"$set": member_data}
             )
             return "updated"
         else:
-            # 새 멤버 추가
             self.members.insert_one(member_data)
             return "added"
 
@@ -95,6 +93,24 @@ class Database:
             {"$set": {"status": new_status}}
         )
         return result.modified_count > 0
+
+    # 프로필 관련 함수들
+    def get_profile(self, discord_id):
+        return self.profiles.find_one({"discord_id": discord_id})
+
+    def create_or_update_profile(self, discord_id, profile_data):
+        profile_data["discord_id"] = discord_id
+        profile_data["updated_at"] = datetime.utcnow()
+        
+        result = self.profiles.update_one(
+            {"discord_id": discord_id},
+            {"$set": profile_data},
+            upsert=True
+        )
+        return result.modified_count > 0 or result.upserted_id is not None
+
+    def get_all_profiles(self):
+        return list(self.profiles.find().sort("updated_at", -1))
 
 if __name__ == "__main__":
     init_db() 

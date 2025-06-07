@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h2>{{ member.nickname }}의 프로필</h2>
+                </div>
+                <div class="card-body">
+                    {% if profile %}
+                        <h4>자기소개</h4>
+                        <p>{{ profile.introduction }}</p>
+                        
+                        <h4>관심사</h4>
+                        <p>{{ profile.interests }}</p>
+                        
+                        {% if profile.github %}
+                        <h4>GitHub</h4>
+                        <p><a href="{{ profile.github }}" target="_blank">{{ profile.github }}</a></p>
+                        {% endif %}
+                        
+                        {% if profile.blog %}
+                        <h4>블로그</h4>
+                        <p><a href="{{ profile.blog }}" target="_blank">{{ profile.blog }}</a></p>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('edit_profile', discord_id=member.discord_id) }}" class="btn btn-primary">프로필 수정</a>
+                    {% else %}
+                        <p>아직 작성된 프로필이 없습니다.</p>
+                        <a href="{{ url_for('edit_profile', discord_id=member.discord_id) }}" class="btn btn-primary">프로필 작성하기</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

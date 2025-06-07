@@ -26,7 +26,7 @@
                     {% for member in members %}
                     <div class="member-card">
                         <h3>{{ member.nickname }}</h3>
-                        <a href="{{ url_for('member_profile', discord_id=member.discord_id) }}" class="button">프로필 보기</a>
+                        <a href="{{ url_for('view_profile', discord_id=member.discord_id) }}" class="button">프로필 보기</a>
                     </div>
                     {% endfor %}
                 </div>
