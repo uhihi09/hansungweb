@@ -22,9 +22,11 @@ class Database:
         if self._initialized:
             return
 
-        # 데이터베이스 파일 경로를 환경 변수에서 가져옴
-        db_path = os.getenv('DATABASE_PATH', 'database.db')
-        self.conn = sqlite3.connect(db_path)
+        self.db_file = 'hansung.db'
+        # 데이터베이스 파일이 있으면 삭제
+        if os.path.exists(self.db_file):
+            os.remove(self.db_file)
+        # 테이블 생성
         self.create_tables()
         
         # Discord 봇 설정 (한 번만 초기화)
@@ -70,8 +72,7 @@ class Database:
         self._initialized = True
 
     def get_connection(self):
-        db_path = os.getenv('DATABASE_PATH', 'database.db')
-        return sqlite3.connect(db_path)
+        return sqlite3.connect(self.db_file)
     
     def create_tables(self):
         conn = self.get_connection()
@@ -100,6 +101,7 @@ class Database:
         ''')
         
         conn.commit()
+        conn.close()
     
     def add_member(self, discord_id, nickname, avatar_hash=None):
         conn = self.get_connection()
@@ -107,6 +109,7 @@ class Database:
         cursor.execute('INSERT OR REPLACE INTO members (discord_id, nickname, avatar_hash) VALUES (?, ?, ?)',
                       (str(discord_id), nickname, avatar_hash))
         conn.commit()
+        conn.close()
     
     def update_member_name(self, discord_id, new_name, avatar_hash=None):
         conn = self.get_connection()
@@ -114,6 +117,7 @@ class Database:
         cursor.execute('UPDATE members SET nickname = ?, avatar_hash = ? WHERE discord_id = ?',
                       (new_name, avatar_hash, str(discord_id)))
         conn.commit()
+        conn.close()
     
     def get_all_members(self):
         conn = self.get_connection()
@@ -126,8 +130,10 @@ class Database:
         LEFT JOIN profiles p ON m.discord_id = p.discord_id 
         ORDER BY p.updated_at DESC NULLS LAST
         ''')
-        return [dict(zip(['discord_id', 'nickname', 'avatar_hash', 'joined_at', 'updated_at'], row)) 
-                for row in cursor.fetchall()]
+        members = [dict(zip(['discord_id', 'nickname', 'avatar_hash', 'joined_at', 'updated_at'], row)) 
+                  for row in cursor.fetchall()]
+        conn.close()
+        return members
     
     def get_member_by_id(self, discord_id):
         conn = self.get_connection()
@@ -139,10 +145,31 @@ class Database:
         WHERE m.discord_id = ?
         ''', (discord_id,))
         row = cursor.fetchone()
+        conn.close()
         if row:
             return dict(zip(['discord_id', 'nickname', 'avatar_hash', 'joined_at', 'updated_at'], row))
         return None
     
+    def add_profile(self, discord_id, introduction, profile_image, incidents):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+        INSERT OR REPLACE INTO profiles (discord_id, introduction, profile_image, incidents, updated_at)
+        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ''', (str(discord_id), introduction, profile_image, incidents))
+        conn.commit()
+        conn.close()
+    
+    def get_profile(self, discord_id):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM profiles WHERE discord_id = ?', (str(discord_id),))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return dict(zip(['discord_id', 'introduction', 'profile_image', 'incidents', 'updated_at'], row))
+        return None
+
     def get_all_profiles(self):
         conn = self.get_connection()
         cursor = conn.cursor()
@@ -154,15 +181,6 @@ class Database:
         ''')
         return [dict(zip(['discord_id', 'introduction', 'profile_image', 'incidents', 'updated_at', 'nickname', 'joined_at'], row)) 
                 for row in cursor.fetchall()]
-    
-    def get_profile(self, discord_id):
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM profiles WHERE discord_id = ?', (discord_id,))
-        row = cursor.fetchone()
-        if row:
-            return dict(zip(['discord_id', 'introduction', 'profile_image', 'incidents', 'updated_at'], row))
-        return None
     
     def create_or_update_profile(self, discord_id, profile_data):
         conn = self.get_connection()
@@ -177,6 +195,7 @@ class Database:
             profile_data.get('incidents', '')
         ))
         conn.commit()
+        conn.close()
 
     def get_discord_profile(self, discord_id):
         """Discord 프로필 정보를 가져옵니다."""
