@@ -23,14 +23,31 @@ def allowed_file(filename):
 # 전역 변수로 Database 인스턴스 생성
 db = Database()
 
+# 봇 실행 상태를 저장할 파일
+BOT_STATUS_FILE = 'bot_status.txt'
+
+def is_bot_running():
+    try:
+        with open(BOT_STATUS_FILE, 'r') as f:
+            return f.read().strip() == 'running'
+    except FileNotFoundError:
+        return False
+
+def set_bot_status(status):
+    with open(BOT_STATUS_FILE, 'w') as f:
+        f.write(status)
+
 # Discord 봇을 백그라운드에서 실행
 def run_bot():
-    if not hasattr(run_bot, 'bot_running'):
-        db.bot.run(os.getenv('DISCORD_TOKEN'))
-        run_bot.bot_running = True
+    if not is_bot_running():
+        set_bot_status('running')
+        try:
+            db.bot.run(os.getenv('DISCORD_TOKEN'))
+        finally:
+            set_bot_status('stopped')
 
 # 봇 실행을 위한 스레드 시작
-if not hasattr(run_bot, 'bot_running'):
+if not is_bot_running():
     bot_thread = threading.Thread(target=run_bot)
     bot_thread.daemon = True  # 메인 프로그램이 종료되면 봇도 종료
     bot_thread.start()
