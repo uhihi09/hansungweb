@@ -30,6 +30,11 @@ bot_thread = threading.Thread(target=run_bot)
 bot_thread.daemon = True  # 메인 프로그램이 종료되면 봇도 종료
 bot_thread.start()
 
+# 템플릿에서 사용할 함수 등록
+@app.context_processor
+def utility_processor():
+    return dict(get_discord_profile=db.get_discord_profile)
+
 @app.route('/')
 def index():
     members = db.get_all_members()

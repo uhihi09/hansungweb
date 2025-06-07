@@ -8,21 +8,37 @@ import threading
 
 load_dotenv()
 
-intents = discord.Intents.default()
-intents.members = True
-intents.message_content = True
-
 class Database:
     def __init__(self):
-        self.bot = commands.Bot(command_prefix='!', intents=intents)
-        self.bot.event(self.on_ready)
-        self._local = threading.local()
+        # 데이터베이스 파일 경로를 환경 변수에서 가져옴
+        db_path = os.getenv('DATABASE_PATH', 'database.db')
+        self.conn = sqlite3.connect(db_path)
         self.create_tables()
+        
+        # Discord 봇 설정
+        intents = discord.Intents.default()
+        intents.members = True
+        intents.message_content = True
+        self.bot = commands.Bot(command_prefix='!', intents=intents)
+        
+        @self.bot.event
+        async def on_ready():
+            print(f'{self.bot.user} 봇이 시작되었습니다!')
+            # 서버 ID를 환경 변수에서 가져옴
+            self.guild = self.bot.get_guild(int(os.getenv('DISCORD_GUILD_ID')))
+        
+        @self.bot.event
+        async def on_member_join(member):
+            self.add_member(member.id, member.name)
+        
+        @self.bot.event
+        async def on_member_update(before, after):
+            if before.name != after.name:
+                self.update_member_name(after.id, after.name)
     
     def get_connection(self):
-        if not hasattr(self._local, 'conn'):
-            self._local.conn = sqlite3.connect('hansung.db')
-        return self._local.conn
+        db_path = os.getenv('DATABASE_PATH', 'database.db')
+        return sqlite3.connect(db_path)
     
     def create_tables(self):
         conn = self.get_connection()
