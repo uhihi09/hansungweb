@@ -50,5 +50,51 @@ def get_all_members():
 def get_member(discord_id):
     return members.find_one({"discord_id": discord_id})
 
+class Database:
+    def __init__(self):
+        self.client = MongoClient(os.getenv('MONGODB_URI'))
+        self.db = self.client[os.getenv('MONGODB_DB', 'hansung')]
+        self.members = self.db.members
+
+    def get_all_members(self):
+        return list(self.members.find().sort("nickname", 1))
+
+    def get_member_by_id(self, member_id):
+        return self.members.find_one({"id": member_id})
+
+    def add_or_update_member(self, member_data):
+        # discord_id로 멤버 찾기
+        existing_member = self.members.find_one({"discord_id": member_data["discord_id"]})
+        
+        if existing_member:
+            # 기존 멤버 업데이트
+            self.members.update_one(
+                {"discord_id": member_data["discord_id"]},
+                {"$set": member_data}
+            )
+            return "updated"
+        else:
+            # 새 멤버 추가
+            self.members.insert_one(member_data)
+            return "added"
+
+    def delete_member(self, member_id):
+        result = self.members.delete_one({"id": member_id})
+        return result.deleted_count > 0
+
+    def update_member_role(self, member_id, new_role):
+        result = self.members.update_one(
+            {"id": member_id},
+            {"$set": {"role": new_role}}
+        )
+        return result.modified_count > 0
+
+    def update_member_status(self, member_id, new_status):
+        result = self.members.update_one(
+            {"id": member_id},
+            {"$set": {"status": new_status}}
+        )
+        return result.modified_count > 0
+
 if __name__ == "__main__":
     init_db() 
