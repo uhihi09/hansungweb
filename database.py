@@ -22,12 +22,15 @@ class Database:
         if self._initialized:
             return
 
-        self.db_file = 'hansung.db'
+        # 데이터베이스 파일 경로를 환경 변수에서 가져옴
+        self.db_file = os.getenv('DATABASE_PATH', 'hansung.db')
         print(f"데이터베이스 파일 경로: {os.path.abspath(self.db_file)}")
-        # 데이터베이스 파일이 있으면 삭제
-        if os.path.exists(self.db_file):
+        
+        # 데이터베이스 파일이 있으면 삭제 (개발 환경에서만)
+        if os.getenv('ENVIRONMENT') == 'development' and os.path.exists(self.db_file):
             print(f"기존 데이터베이스 파일 삭제: {self.db_file}")
             os.remove(self.db_file)
+        
         # 테이블 생성
         self.create_tables()
         

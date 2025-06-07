@@ -10,8 +10,12 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('discord_bot')
 
-# .env 파일 로드
+# 환경 변수 로드
 load_dotenv()
+
+# 환경 변수 설정
+os.environ['DATABASE_PATH'] = '/opt/render/project/src/hansung.db'
+os.environ['ENVIRONMENT'] = 'production'
 
 # 봇 설정
 intents = discord.Intents.default()
