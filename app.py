@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from database import Database
 import os
-from waitress import serve
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -58,6 +57,4 @@ def edit_profile(discord_id):
     return render_template('edit_profile.html', profile=profile, member=member)
 
 if __name__ == '__main__':
-    db.init_db()
-    port = int(os.environ.get('PORT', 5000))
-    serve(app, host='0.0.0.0', port=port) 
+    app.run(debug=True) 
