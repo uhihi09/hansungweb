@@ -11,9 +11,34 @@
                 </div>
                 <div class="card-body">
                     {% if profile %}
-                        <div class="mb-4">
-                            <h4>자기소개</h4>
-                            <p class="profile-text">{{ profile.introduction or '작성된 자기소개가 없습니다.' }}</p>
+                        <div class="text-center mb-4">
+                            {% if profile.profile_image %}
+                            <img src="{{ profile.profile_image }}" alt="프로필 사진" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                            {% else %}
+                            <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="기본 프로필" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                            {% endif %}
+                        </div>
+
+                        <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="intro-tab" data-bs-toggle="tab" data-bs-target="#intro" type="button" role="tab" aria-controls="intro" aria-selected="true">자기소개</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="incidents-tab" data-bs-toggle="tab" data-bs-target="#incidents" type="button" role="tab" aria-controls="incidents" aria-selected="false">논란 및 사건사고</button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="profileTabsContent">
+                            <div class="tab-pane fade show active" id="intro" role="tabpanel" aria-labelledby="intro-tab">
+                                <div class="mb-4">
+                                    <p class="profile-text">{{ profile.introduction or '작성된 자기소개가 없습니다.' }}</p>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="incidents" role="tabpanel" aria-labelledby="incidents-tab">
+                                <div class="mb-4">
+                                    <p class="profile-text">{{ profile.incidents or '작성된 논란 및 사건사고가 없습니다.' }}</p>
+                                </div>
+                            </div>
                         </div>
                     {% else %}
                         <p class="text-center">아직 작성된 프로필이 없습니다.</p>

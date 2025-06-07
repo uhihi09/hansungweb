@@ -48,6 +48,8 @@ class Database:
         CREATE TABLE IF NOT EXISTS profiles (
             discord_id TEXT PRIMARY KEY,
             introduction TEXT,
+            profile_image TEXT,
+            incidents TEXT,
             FOREIGN KEY (discord_id) REFERENCES members(discord_id)
         )
         ''')
@@ -127,7 +129,7 @@ class Database:
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM profiles')
-        return [dict(zip(['discord_id', 'introduction'], row)) 
+        return [dict(zip(['discord_id', 'introduction', 'profile_image', 'incidents'], row)) 
                 for row in cursor.fetchall()]
     
     def get_profile(self, discord_id):
@@ -136,18 +138,20 @@ class Database:
         cursor.execute('SELECT * FROM profiles WHERE discord_id = ?', (discord_id,))
         row = cursor.fetchone()
         if row:
-            return dict(zip(['discord_id', 'introduction'], row))
+            return dict(zip(['discord_id', 'introduction', 'profile_image', 'incidents'], row))
         return None
     
     def create_or_update_profile(self, discord_id, profile_data):
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute('''
-        INSERT OR REPLACE INTO profiles (discord_id, introduction)
-        VALUES (?, ?)
+        INSERT OR REPLACE INTO profiles (discord_id, introduction, profile_image, incidents)
+        VALUES (?, ?, ?, ?)
         ''', (
             discord_id,
-            profile_data.get('introduction', '')
+            profile_data.get('introduction', ''),
+            profile_data.get('profile_image', ''),
+            profile_data.get('incidents', '')
         ))
         conn.commit()
 

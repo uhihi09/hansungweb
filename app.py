@@ -3,11 +3,23 @@ from database import Database
 import os
 from dotenv import load_dotenv
 import threading
+from werkzeug.utils import secure_filename
 
 load_dotenv()
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your-secret-key')  # 세션을 위한 시크릿 키
 db = Database()
+
+# 이미지 업로드 설정
+UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# 업로드 폴더가 없으면 생성
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Discord 봇을 백그라운드에서 실행
 def run_bot():
@@ -39,6 +51,16 @@ def edit_profile(discord_id):
             "github": request.form.get('github', ''),
             "blog": request.form.get('blog', '')
         }
+        
+        # 이미지 업로드 처리
+        if 'profile_image' in request.files:
+            file = request.files['profile_image']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(f"{discord_id}_{file.filename}")
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(filepath)
+                profile_data["profile_image"] = f"/static/uploads/{filename}"
+        
         db.create_or_update_profile(discord_id, profile_data)
         return redirect(url_for('view_profile', discord_id=discord_id))
     
