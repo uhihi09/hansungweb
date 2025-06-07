@@ -60,8 +60,7 @@ def utility_processor():
 @app.route('/')
 def index():
     members = db.get_all_members()
-    profiles = db.get_all_profiles()
-    return render_template('index.html', members=members, profiles=profiles)
+    return render_template('index.html', members=members)
 
 @app.route('/member/<discord_id>')
 def view_profile(discord_id):

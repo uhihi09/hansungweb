@@ -77,18 +77,11 @@ class Database:
         conn = self.get_connection()
         cursor = conn.cursor()
         
-        # 기존 테이블 삭제
-        cursor.execute('DROP TABLE IF EXISTS profiles')
-        cursor.execute('DROP TABLE IF EXISTS members')
-        
         # 멤버 테이블 생성
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS members (
             discord_id TEXT PRIMARY KEY,
             nickname TEXT,
-            role TEXT,
-            status TEXT,
-            last_seen TIMESTAMP,
             joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         ''')
@@ -107,73 +100,32 @@ class Database:
         
         conn.commit()
     
-    def add_or_update_member(self, member_data):
+    def add_member(self, discord_id, nickname):
         conn = self.get_connection()
         cursor = conn.cursor()
-        
-        # 역할 정보 가져오기
-        roles = [role.name for role in member_data.get('roles', []) if role.name != "@everyone"]
-        role_name = roles[0] if roles else "멤버"
-        
-        cursor.execute('''
-        INSERT OR REPLACE INTO members (discord_id, nickname, role, status, last_seen, joined_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ''', (
-            str(member_data['id']),
-            member_data['display_name'],
-            role_name,
-            str(member_data.get('status', 'offline')),
-            datetime.now(),
-            datetime.now()
-        ))
+        cursor.execute('INSERT OR IGNORE INTO members (discord_id, nickname) VALUES (?, ?)',
+                      (str(discord_id), nickname))
         conn.commit()
-        return True
     
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print(f'{self.bot.user} has connected to Discord!')
-        await self.update_members()
-    
-    async def update_members(self):
-        guild_id = os.getenv('GUILD_ID')
-        if not guild_id:
-            print("Warning: GUILD_ID is not set in environment variables")
-            return
-            
-        guild = self.bot.get_guild(int(guild_id))
-        if guild:
-            conn = self.get_connection()
-            cursor = conn.cursor()
-            for member in guild.members:
-                # 역할 정보 가져오기
-                roles = [role.name for role in member.roles if role.name != "@everyone"]
-                role_name = roles[0] if roles else "멤버"
-                
-                cursor.execute('''
-                INSERT OR REPLACE INTO members (discord_id, nickname, role, status, last_seen, joined_at)
-                VALUES (?, ?, ?, ?, ?, ?)
-                ''', (
-                    str(member.id),
-                    member.display_name,
-                    role_name,
-                    str(member.status),
-                    datetime.now(),
-                    datetime.now()
-                ))
-            conn.commit()
+    def update_member_name(self, discord_id, new_name):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute('UPDATE members SET nickname = ? WHERE discord_id = ?',
+                      (new_name, str(discord_id)))
+        conn.commit()
     
     def get_all_members(self):
         conn = self.get_connection()
         cursor = conn.cursor()
         
-        # 프로필이 있는 멤버만 가져오기
+        # 모든 멤버 가져오기
         cursor.execute('''
         SELECT m.*, p.updated_at 
         FROM members m 
         LEFT JOIN profiles p ON m.discord_id = p.discord_id 
         ORDER BY p.updated_at DESC NULLS LAST
         ''')
-        return [dict(zip(['discord_id', 'nickname', 'role', 'status', 'last_seen', 'joined_at', 'updated_at'], row)) 
+        return [dict(zip(['discord_id', 'nickname', 'joined_at', 'updated_at'], row)) 
                 for row in cursor.fetchall()]
     
     def get_member_by_id(self, discord_id):
@@ -187,7 +139,7 @@ class Database:
         ''', (discord_id,))
         row = cursor.fetchone()
         if row:
-            return dict(zip(['discord_id', 'nickname', 'role', 'status', 'last_seen', 'joined_at', 'updated_at'], row))
+            return dict(zip(['discord_id', 'nickname', 'joined_at', 'updated_at'], row))
         return None
     
     def get_all_profiles(self):
