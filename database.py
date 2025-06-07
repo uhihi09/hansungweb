@@ -84,7 +84,12 @@ class Database:
         await self.update_members()
     
     async def update_members(self):
-        guild = self.bot.get_guild(int(os.getenv('GUILD_ID')))
+        guild_id = os.getenv('GUILD_ID')
+        if not guild_id:
+            print("Warning: GUILD_ID is not set in environment variables")
+            return
+            
+        guild = self.bot.get_guild(int(guild_id))
         if guild:
             conn = self.get_connection()
             cursor = conn.cursor()
