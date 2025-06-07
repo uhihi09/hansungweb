@@ -8,7 +8,6 @@ from werkzeug.utils import secure_filename
 load_dotenv()
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your-secret-key')  # 세션을 위한 시크릿 키
-db = Database()
 
 # 이미지 업로드 설정
 UPLOAD_FOLDER = 'static/uploads'
@@ -21,14 +20,20 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# 전역 변수로 Database 인스턴스 생성
+db = Database()
+
 # Discord 봇을 백그라운드에서 실행
 def run_bot():
-    db.bot.run(os.getenv('DISCORD_TOKEN'))
+    if not hasattr(run_bot, 'bot_running'):
+        db.bot.run(os.getenv('DISCORD_TOKEN'))
+        run_bot.bot_running = True
 
 # 봇 실행을 위한 스레드 시작
-bot_thread = threading.Thread(target=run_bot)
-bot_thread.daemon = True  # 메인 프로그램이 종료되면 봇도 종료
-bot_thread.start()
+if not hasattr(run_bot, 'bot_running'):
+    bot_thread = threading.Thread(target=run_bot)
+    bot_thread.daemon = True  # 메인 프로그램이 종료되면 봇도 종료
+    bot_thread.start()
 
 # 템플릿에서 사용할 함수 등록
 @app.context_processor

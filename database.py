@@ -9,45 +9,66 @@ import threading
 load_dotenv()
 
 class Database:
+    _instance = None
+    _bot_initialized = False
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(Database, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self):
+        if self._initialized:
+            return
+
         # 데이터베이스 파일 경로를 환경 변수에서 가져옴
         db_path = os.getenv('DATABASE_PATH', 'database.db')
         self.conn = sqlite3.connect(db_path)
         self.create_tables()
         
-        # Discord 봇 설정
-        intents = discord.Intents.default()
-        intents.members = True
-        intents.message_content = True
-        self.bot = commands.Bot(command_prefix='!', intents=intents)
-        
-        @self.bot.event
-        async def on_ready():
-            print(f'{self.bot.user} 봇이 시작되었습니다!')
-            # 서버 ID를 환경 변수에서 가져옴
-            guild_id = os.getenv('DISCORD_GUILD_ID')
-            if guild_id:
-                try:
-                    self.guild = self.bot.get_guild(int(guild_id))
-                    if self.guild:
-                        print(f'서버 "{self.guild.name}"에 연결되었습니다.')
-                    else:
-                        print(f'서버 ID {guild_id}를 찾을 수 없습니다.')
-                except ValueError:
-                    print(f'잘못된 서버 ID 형식입니다: {guild_id}')
-            else:
-                print('DISCORD_GUILD_ID가 설정되지 않았습니다. 서버 정보를 가져올 수 없습니다.')
-                self.guild = None
-        
-        @self.bot.event
-        async def on_member_join(member):
-            self.add_member(member.id, member.name)
-        
-        @self.bot.event
-        async def on_member_update(before, after):
-            if before.name != after.name:
-                self.update_member_name(after.id, after.name)
-    
+        # Discord 봇 설정 (한 번만 초기화)
+        if not Database._bot_initialized:
+            intents = discord.Intents.default()
+            intents.members = True
+            intents.message_content = True
+            self.bot = commands.Bot(command_prefix='!', intents=intents)
+            
+            @self.bot.event
+            async def on_ready():
+                print(f'{self.bot.user} 봇이 시작되었습니다!')
+                # 서버 ID를 환경 변수에서 가져옴
+                guild_id = os.getenv('DISCORD_GUILD_ID')
+                if guild_id:
+                    try:
+                        self.guild = self.bot.get_guild(int(guild_id))
+                        if self.guild:
+                            print(f'서버 "{self.guild.name}"에 연결되었습니다.')
+                        else:
+                            print(f'서버 ID {guild_id}를 찾을 수 없습니다.')
+                    except ValueError:
+                        print(f'잘못된 서버 ID 형식입니다: {guild_id}')
+                else:
+                    print('DISCORD_GUILD_ID가 설정되지 않았습니다. 서버 정보를 가져올 수 없습니다.')
+                    self.guild = None
+            
+            @self.bot.event
+            async def on_member_join(member):
+                self.add_member(member.id, member.name)
+            
+            @self.bot.event
+            async def on_member_update(before, after):
+                if before.name != after.name:
+                    self.update_member_name(after.id, after.name)
+            
+            Database._bot_initialized = True
+        else:
+            # 이미 초기화된 봇 인스턴스 가져오기
+            self.bot = Database._instance.bot
+            self.guild = Database._instance.guild
+
+        self._initialized = True
+
     def get_connection(self):
         db_path = os.getenv('DATABASE_PATH', 'database.db')
         return sqlite3.connect(db_path)
