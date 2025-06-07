@@ -40,13 +40,15 @@ def index():
 def view_profile(discord_id):
     profile = db.get_profile(discord_id)
     member = db.get_member_by_id(discord_id)
-    return render_template('profile.html', profile=profile, member=member)
+    discord_profile = db.get_discord_profile(discord_id)
+    return render_template('profile.html', profile=profile, member=member, discord_profile=discord_profile)
 
 @app.route('/member/<discord_id>/edit', methods=['GET', 'POST'])
 def edit_profile(discord_id):
     if request.method == 'POST':
         profile_data = {
             "introduction": request.form.get('introduction', ''),
+            "incidents": request.form.get('incidents', ''),
             "interests": request.form.get('interests', ''),
             "github": request.form.get('github', ''),
             "blog": request.form.get('blog', '')
@@ -66,7 +68,8 @@ def edit_profile(discord_id):
     
     profile = db.get_profile(discord_id)
     member = db.get_member_by_id(discord_id)
-    return render_template('edit_profile.html', profile=profile, member=member)
+    discord_profile = db.get_discord_profile(discord_id)
+    return render_template('edit_profile.html', profile=profile, member=member, discord_profile=discord_profile)
 
 @app.route('/api/update_profile', methods=['POST'])
 def update_profile():

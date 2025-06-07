@@ -13,7 +13,9 @@
                         <div class="mb-4">
                             <label for="profile_image" class="form-label">프로필 사진</label>
                             <div class="d-flex align-items-center">
-                                {% if profile and profile.profile_image %}
+                                {% if discord_profile and discord_profile.avatar_url %}
+                                <img src="{{ discord_profile.avatar_url }}" alt="Discord 프로필" class="rounded-circle me-3" style="width: 100px; height: 100px; object-fit: cover;">
+                                {% elif profile and profile.profile_image %}
                                 <img src="{{ profile.profile_image }}" alt="프로필 사진" class="rounded-circle me-3" style="width: 100px; height: 100px; object-fit: cover;">
                                 {% else %}
                                 <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="기본 프로필" class="rounded-circle me-3" style="width: 100px; height: 100px; object-fit: cover;">

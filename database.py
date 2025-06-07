@@ -155,5 +155,21 @@ class Database:
         ))
         conn.commit()
 
+    def get_discord_profile(self, discord_id):
+        """Discord 프로필 정보를 가져옵니다."""
+        try:
+            member = self.bot.get_user(int(discord_id))
+            if member:
+                return {
+                    'name': member.name,
+                    'avatar_url': str(member.avatar.url) if member.avatar else None,
+                    'discriminator': member.discriminator,
+                    'created_at': member.created_at.isoformat(),
+                    'is_bot': member.bot
+                }
+        except Exception as e:
+            print(f"Discord 프로필 가져오기 실패: {e}")
+        return None
+
 if __name__ == "__main__":
     db = Database() 
