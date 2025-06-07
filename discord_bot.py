@@ -27,10 +27,16 @@ async def on_ready():
             if guild:
                 print(f'서버 "{guild.name}"에 연결되었습니다.')
                 # 모든 멤버 정보 업데이트
+                member_count = 0
                 for member in guild.members:
-                    avatar_hash = member.avatar.key if member.avatar else None
-                    db.add_member(str(member.id), member.display_name, avatar_hash)
-                print(f"총 {len(guild.members)}명의 멤버 정보를 업데이트했습니다.")
+                    try:
+                        avatar_hash = member.avatar.key if member.avatar else None
+                        db.add_member(str(member.id), member.display_name, avatar_hash)
+                        print(f"멤버 추가: {member.display_name} (ID: {member.id}, 아바타: {avatar_hash})")
+                        member_count += 1
+                    except Exception as e:
+                        print(f"멤버 {member.display_name} 추가 중 오류 발생: {e}")
+                print(f"총 {member_count}명의 멤버 정보를 업데이트했습니다.")
             else:
                 print(f'서버 ID {guild_id}를 찾을 수 없습니다.')
                 print('서버 ID가 올바른지 확인해주세요.')
@@ -48,16 +54,22 @@ async def on_ready():
 
 @bot.event
 async def on_member_join(member):
-    avatar_hash = member.avatar.key if member.avatar else None
-    db.add_member(str(member.id), member.display_name, avatar_hash)
-    print(f"새 멤버 추가: {member.display_name}")
+    try:
+        avatar_hash = member.avatar.key if member.avatar else None
+        db.add_member(str(member.id), member.display_name, avatar_hash)
+        print(f"새 멤버 추가: {member.display_name} (ID: {member.id}, 아바타: {avatar_hash})")
+    except Exception as e:
+        print(f"새 멤버 {member.display_name} 추가 중 오류 발생: {e}")
 
 @bot.event
 async def on_member_update(before, after):
     if before.display_name != after.display_name or before.avatar != after.avatar:
-        avatar_hash = after.avatar.key if after.avatar else None
-        db.update_member_name(str(after.id), after.display_name, avatar_hash)
-        print(f"멤버 정보 업데이트: {before.display_name} -> {after.display_name}")
+        try:
+            avatar_hash = after.avatar.key if after.avatar else None
+            db.update_member_name(str(after.id), after.display_name, avatar_hash)
+            print(f"멤버 정보 업데이트: {before.display_name} -> {after.display_name} (ID: {after.id}, 아바타: {avatar_hash})")
+        except Exception as e:
+            print(f"멤버 {after.display_name} 업데이트 중 오류 발생: {e}")
 
 @bot.event
 async def on_member_remove(member):

@@ -23,8 +23,10 @@ class Database:
             return
 
         self.db_file = 'hansung.db'
+        print(f"데이터베이스 파일 경로: {os.path.abspath(self.db_file)}")
         # 데이터베이스 파일이 있으면 삭제
         if os.path.exists(self.db_file):
+            print(f"기존 데이터베이스 파일 삭제: {self.db_file}")
             os.remove(self.db_file)
         # 테이블 생성
         self.create_tables()
@@ -72,9 +74,13 @@ class Database:
         self._initialized = True
 
     def get_connection(self):
-        return sqlite3.connect(self.db_file)
+        print(f"데이터베이스 연결 시도: {self.db_file}")
+        conn = sqlite3.connect(self.db_file)
+        conn.row_factory = sqlite3.Row  # 결과를 딕셔너리로 반환
+        return conn
     
     def create_tables(self):
+        print("테이블 생성 시작")
         conn = self.get_connection()
         cursor = conn.cursor()
         
@@ -87,6 +93,7 @@ class Database:
             joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         ''')
+        print("멤버 테이블 생성 완료")
         
         # 프로필 테이블 생성
         cursor.execute('''
@@ -99,56 +106,77 @@ class Database:
             FOREIGN KEY (discord_id) REFERENCES members(discord_id)
         )
         ''')
+        print("프로필 테이블 생성 완료")
         
         conn.commit()
         conn.close()
+        print("테이블 생성 완료")
     
     def add_member(self, discord_id, nickname, avatar_hash=None):
+        print(f"멤버 추가 시도: {discord_id}, {nickname}, {avatar_hash}")
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute('INSERT OR REPLACE INTO members (discord_id, nickname, avatar_hash) VALUES (?, ?, ?)',
-                      (str(discord_id), nickname, avatar_hash))
-        conn.commit()
-        conn.close()
-    
-    def update_member_name(self, discord_id, new_name, avatar_hash=None):
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        cursor.execute('UPDATE members SET nickname = ?, avatar_hash = ? WHERE discord_id = ?',
-                      (new_name, avatar_hash, str(discord_id)))
-        conn.commit()
-        conn.close()
+        try:
+            cursor.execute('INSERT OR REPLACE INTO members (discord_id, nickname, avatar_hash) VALUES (?, ?, ?)',
+                          (str(discord_id), nickname, avatar_hash))
+            conn.commit()
+            print(f"멤버 추가 성공: {discord_id}")
+        except Exception as e:
+            print(f"멤버 추가 실패: {e}")
+            raise
+        finally:
+            conn.close()
     
     def get_all_members(self):
+        print("모든 멤버 조회 시도")
         conn = self.get_connection()
         cursor = conn.cursor()
-        
-        # 모든 멤버 가져오기
-        cursor.execute('''
-        SELECT m.*, p.updated_at 
-        FROM members m 
-        LEFT JOIN profiles p ON m.discord_id = p.discord_id 
-        ORDER BY p.updated_at DESC NULLS LAST
-        ''')
-        members = [dict(zip(['discord_id', 'nickname', 'avatar_hash', 'joined_at', 'updated_at'], row)) 
-                  for row in cursor.fetchall()]
-        conn.close()
-        return members
+        try:
+            cursor.execute('SELECT * FROM members')
+            members = [dict(row) for row in cursor.fetchall()]
+            print(f"조회된 멤버 수: {len(members)}")
+            for member in members:
+                print(f"멤버: {member}")
+            return members
+        except Exception as e:
+            print(f"멤버 조회 실패: {e}")
+            return []
+        finally:
+            conn.close()
     
     def get_member_by_id(self, discord_id):
+        print(f"멤버 조회 시도: {discord_id}")
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute('''
-        SELECT m.*, p.updated_at 
-        FROM members m 
-        LEFT JOIN profiles p ON m.discord_id = p.discord_id 
-        WHERE m.discord_id = ?
-        ''', (discord_id,))
-        row = cursor.fetchone()
-        conn.close()
-        if row:
-            return dict(zip(['discord_id', 'nickname', 'avatar_hash', 'joined_at', 'updated_at'], row))
-        return None
+        try:
+            cursor.execute('SELECT * FROM members WHERE discord_id = ?', (str(discord_id),))
+            row = cursor.fetchone()
+            if row:
+                member = dict(row)
+                print(f"멤버 조회 성공: {member}")
+                return member
+            print(f"멤버를 찾을 수 없음: {discord_id}")
+            return None
+        except Exception as e:
+            print(f"멤버 조회 실패: {e}")
+            return None
+        finally:
+            conn.close()
+    
+    def update_member_name(self, discord_id, new_name, avatar_hash=None):
+        print(f"멤버 정보 업데이트 시도: {discord_id}, {new_name}, {avatar_hash}")
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute('UPDATE members SET nickname = ?, avatar_hash = ? WHERE discord_id = ?',
+                          (new_name, avatar_hash, str(discord_id)))
+            conn.commit()
+            print(f"멤버 정보 업데이트 성공: {discord_id}")
+        except Exception as e:
+            print(f"멤버 정보 업데이트 실패: {e}")
+            raise
+        finally:
+            conn.close()
     
     def add_profile(self, discord_id, introduction, profile_image, incidents):
         conn = self.get_connection()
