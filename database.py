@@ -57,6 +57,27 @@ class Database:
         
         conn.commit()
     
+    def add_or_update_member(self, member_data):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        # 역할 정보 가져오기
+        roles = [role.name for role in member_data.get('roles', []) if role.name != "@everyone"]
+        role_name = roles[0] if roles else "멤버"
+        
+        cursor.execute('''
+        INSERT OR REPLACE INTO members (discord_id, nickname, role, status, last_seen)
+        VALUES (?, ?, ?, ?, ?)
+        ''', (
+            str(member_data['id']),
+            member_data['display_name'],
+            role_name,
+            str(member_data.get('status', 'offline')),
+            datetime.now()
+        ))
+        conn.commit()
+        return True
+    
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'{self.bot.user} has connected to Discord!')
