@@ -13,31 +13,7 @@
                     {% if profile %}
                         <div class="mb-4">
                             <h4>자기소개</h4>
-                            <p>{{ profile.introduction or '작성된 자기소개가 없습니다.' }}</p>
-                        </div>
-                        <div class="mb-4">
-                            <h4>관심사</h4>
-                            <p>{{ profile.interests or '작성된 관심사가 없습니다.' }}</p>
-                        </div>
-                        <div class="mb-4">
-                            <h4>GitHub</h4>
-                            <p>
-                                {% if profile.github %}
-                                    <a href="{{ profile.github }}" target="_blank" class="text-decoration-none">{{ profile.github }}</a>
-                                {% else %}
-                                    작성된 GitHub 링크가 없습니다.
-                                {% endif %}
-                            </p>
-                        </div>
-                        <div class="mb-4">
-                            <h4>블로그</h4>
-                            <p>
-                                {% if profile.blog %}
-                                    <a href="{{ profile.blog }}" target="_blank" class="text-decoration-none">{{ profile.blog }}</a>
-                                {% else %}
-                                    작성된 블로그 링크가 없습니다.
-                                {% endif %}
-                            </p>
+                            <p class="profile-text">{{ profile.introduction or '작성된 자기소개가 없습니다.' }}</p>
                         </div>
                     {% else %}
                         <p class="text-center">아직 작성된 프로필이 없습니다.</p>
@@ -47,4 +23,11 @@
         </div>
     </div>
 </div>
+
+<style>
+.profile-text {
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
+</style>
 {% endblock %} 
