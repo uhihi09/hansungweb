@@ -2,19 +2,17 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="text-center mb-4">한성대학교 디스코드 멤버 목록</h1>
+    <h1 class="text-center mb-4">한성 디스코드 서버 멤버 목록</h1>
     <div class="row">
-        {% for profile in profiles %}
+        {% for member in members %}
         <div class="col-md-4 mb-4">
             <div class="card h-100">
                 <div class="card-body text-center">
-                    {% set discord_profile = get_discord_profile(profile.discord_id) %}
+                    {% set discord_profile = get_discord_profile(member.discord_id) %}
                     
                     <div class="mb-3">
                         {% if discord_profile and discord_profile.avatar_url %}
                         <img src="{{ discord_profile.avatar_url }}" alt="Discord 프로필" class="rounded-circle mb-2" style="width: 100px; height: 100px; object-fit: cover;">
-                        {% elif profile.profile_image %}
-                        <img src="{{ profile.profile_image }}" alt="프로필 사진" class="rounded-circle mb-2" style="width: 100px; height: 100px; object-fit: cover;">
                         {% else %}
                         <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="기본 프로필" class="rounded-circle mb-2" style="width: 100px; height: 100px; object-fit: cover;">
                         {% endif %}
@@ -30,17 +28,17 @@
                         </div>
                         {% endif %}
                         {% else %}
-                        <h5 class="card-title">{{ profile.nickname }}</h5>
+                        <h5 class="card-title">{{ member.nickname }}</h5>
                         {% endif %}
 
-                        {% if profile.updated_at %}
+                        {% if member.updated_at %}
                         <p class="text-muted small">
-                            <i class="fas fa-clock"></i> 최근 업데이트: {{ profile.updated_at.split('T')[0] }}
+                            <i class="fas fa-clock"></i> 최근 업데이트: {{ member.updated_at.split('T')[0] }}
                         </p>
                         {% endif %}
                     </div>
                     
-                    <a href="{{ url_for('view_profile', discord_id=profile.discord_id) }}" class="btn btn-primary">프로필 보기</a>
+                    <a href="{{ url_for('view_profile', discord_id=member.discord_id) }}" class="btn btn-primary">프로필 보기</a>
                 </div>
             </div>
         </div>

@@ -165,17 +165,29 @@ class Database:
     def get_all_members(self):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM members')
-        return [dict(zip(['discord_id', 'nickname', 'role', 'status', 'last_seen', 'joined_at'], row)) 
+        
+        # 프로필이 있는 멤버만 가져오기
+        cursor.execute('''
+        SELECT m.*, p.updated_at 
+        FROM members m 
+        LEFT JOIN profiles p ON m.discord_id = p.discord_id 
+        ORDER BY p.updated_at DESC NULLS LAST
+        ''')
+        return [dict(zip(['discord_id', 'nickname', 'role', 'status', 'last_seen', 'joined_at', 'updated_at'], row)) 
                 for row in cursor.fetchall()]
     
     def get_member_by_id(self, discord_id):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM members WHERE discord_id = ?', (discord_id,))
+        cursor.execute('''
+        SELECT m.*, p.updated_at 
+        FROM members m 
+        LEFT JOIN profiles p ON m.discord_id = p.discord_id 
+        WHERE m.discord_id = ?
+        ''', (discord_id,))
         row = cursor.fetchone()
         if row:
-            return dict(zip(['discord_id', 'nickname', 'role', 'status', 'last_seen', 'joined_at'], row))
+            return dict(zip(['discord_id', 'nickname', 'role', 'status', 'last_seen', 'joined_at', 'updated_at'], row))
         return None
     
     def get_all_profiles(self):
