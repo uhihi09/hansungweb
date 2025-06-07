@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 import sqlite3
 from datetime import datetime
+import threading
 
 load_dotenv()
 
@@ -15,11 +16,17 @@ class Database:
     def __init__(self):
         self.bot = commands.Bot(command_prefix='!', intents=intents)
         self.bot.event(self.on_ready)
-        self.conn = sqlite3.connect('hansung.db')
+        self._local = threading.local()
         self.create_tables()
     
+    def get_connection(self):
+        if not hasattr(self._local, 'conn'):
+            self._local.conn = sqlite3.connect('hansung.db')
+        return self._local.conn
+    
     def create_tables(self):
-        cursor = self.conn.cursor()
+        conn = self.get_connection()
+        cursor = conn.cursor()
         
         # 멤버 테이블 생성
         cursor.execute('''
@@ -44,7 +51,7 @@ class Database:
         )
         ''')
         
-        self.conn.commit()
+        conn.commit()
     
     @commands.Cog.listener()
     async def on_ready(self):
@@ -54,7 +61,8 @@ class Database:
     async def update_members(self):
         guild = self.bot.get_guild(int(os.getenv('GUILD_ID')))
         if guild:
-            cursor = self.conn.cursor()
+            conn = self.get_connection()
+            cursor = conn.cursor()
             for member in guild.members:
                 cursor.execute('''
                 INSERT OR REPLACE INTO members (discord_id, nickname, role, status, last_seen)
@@ -66,16 +74,18 @@ class Database:
                     str(member.status),
                     datetime.now()
                 ))
-            self.conn.commit()
+            conn.commit()
     
     def get_all_members(self):
-        cursor = self.conn.cursor()
+        conn = self.get_connection()
+        cursor = conn.cursor()
         cursor.execute('SELECT * FROM members')
         return [dict(zip(['discord_id', 'nickname', 'role', 'status', 'last_seen'], row)) 
                 for row in cursor.fetchall()]
     
     def get_member_by_id(self, discord_id):
-        cursor = self.conn.cursor()
+        conn = self.get_connection()
+        cursor = conn.cursor()
         cursor.execute('SELECT * FROM members WHERE discord_id = ?', (discord_id,))
         row = cursor.fetchone()
         if row:
@@ -83,13 +93,15 @@ class Database:
         return None
     
     def get_all_profiles(self):
-        cursor = self.conn.cursor()
+        conn = self.get_connection()
+        cursor = conn.cursor()
         cursor.execute('SELECT * FROM profiles')
         return [dict(zip(['discord_id', 'introduction', 'interests', 'github', 'blog'], row)) 
                 for row in cursor.fetchall()]
     
     def get_profile(self, discord_id):
-        cursor = self.conn.cursor()
+        conn = self.get_connection()
+        cursor = conn.cursor()
         cursor.execute('SELECT * FROM profiles WHERE discord_id = ?', (discord_id,))
         row = cursor.fetchone()
         if row:
@@ -97,7 +109,8 @@ class Database:
         return None
     
     def create_or_update_profile(self, discord_id, profile_data):
-        cursor = self.conn.cursor()
+        conn = self.get_connection()
+        cursor = conn.cursor()
         cursor.execute('''
         INSERT OR REPLACE INTO profiles (discord_id, introduction, interests, github, blog)
         VALUES (?, ?, ?, ?, ?)
@@ -108,7 +121,7 @@ class Database:
             profile_data.get('github', ''),
             profile_data.get('blog', '')
         ))
-        self.conn.commit()
+        conn.commit()
 
 if __name__ == "__main__":
     db = Database() 
