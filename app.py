@@ -15,32 +15,12 @@ def index():
     return render_template('index.html', members=members, profiles=profiles)
 
 @app.route('/member/<discord_id>')
-def member_profile(discord_id):
-    member = db.get_member(discord_id)
-    if member:
-        return render_template('member.html', member=member)
-    return redirect(url_for('index'))
-
-@app.route('/api/update_profile', methods=['POST'])
-def update_profile():
-    data = request.json
-    discord_id = data.get('discord_id')
-    editor_discord_id = data.get('editor_discord_id')
-    new_description = data.get('description')
-    
-    if not all([discord_id, editor_discord_id, new_description]):
-        return jsonify({'success': False, 'error': 'Missing required fields'})
-    
-    success = db.update_member_profile(discord_id, editor_discord_id, new_description)
-    return jsonify({'success': success})
-
-@app.route('/profile/<discord_id>')
 def view_profile(discord_id):
     profile = db.get_profile(discord_id)
     member = db.get_member_by_id(discord_id)
     return render_template('profile.html', profile=profile, member=member)
 
-@app.route('/profile/edit/<discord_id>', methods=['GET', 'POST'])
+@app.route('/member/<discord_id>/edit', methods=['GET', 'POST'])
 def edit_profile(discord_id):
     if request.method == 'POST':
         profile_data = {
@@ -55,6 +35,19 @@ def edit_profile(discord_id):
     profile = db.get_profile(discord_id)
     member = db.get_member_by_id(discord_id)
     return render_template('edit_profile.html', profile=profile, member=member)
+
+@app.route('/api/update_profile', methods=['POST'])
+def update_profile():
+    data = request.json
+    discord_id = data.get('discord_id')
+    editor_discord_id = data.get('editor_discord_id')
+    new_description = data.get('description')
+    
+    if not all([discord_id, editor_discord_id, new_description]):
+        return jsonify({'success': False, 'error': 'Missing required fields'})
+    
+    success = db.update_member_profile(discord_id, editor_discord_id, new_description)
+    return jsonify({'success': success})
 
 if __name__ == '__main__':
     app.run(debug=True) 

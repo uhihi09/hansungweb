@@ -2,21 +2,34 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="mb-4">한성대학교 멤버 목록</h1>
+    <h1 class="mb-4">서버 멤버</h1>
     <div class="row">
         {% for member in members %}
         <div class="col-md-4 mb-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">{{ member.nickname }}</h5>
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="https://cdn.discordapp.com/embed/avatars/0.png" 
+                             alt="{{ member.nickname }}" 
+                             class="rounded-circle me-3"
+                             style="width: 48px; height: 48px;">
+                        <div>
+                            <h5 class="card-title mb-0">{{ member.nickname }}</h5>
+                            <small class="text-muted">#{{ member.discord_id[-4:] }}</small>
+                        </div>
+                    </div>
                     <p class="card-text">
-                        학번: {{ member.student_id }}<br>
-                        전공: {{ member.major }}<br>
-                        학년: {{ member.grade }}<br>
-                        역할: {{ member.role }}<br>
-                        상태: {{ member.status }}
+                        <span class="badge bg-primary me-2">{{ member.role }}</span>
+                        <span class="status-{{ member.status.lower() }}">
+                            {% if member.status == 'online' %}
+                            ● 온라인
+                            {% else %}
+                            ● 오프라인
+                            {% endif %}
+                        </span>
                     </p>
-                    <a href="{{ url_for('view_profile', discord_id=member.discord_id) }}" class="btn btn-primary">프로필 보기</a>
+                    <a href="{{ url_for('view_profile', discord_id=member.discord_id) }}" 
+                       class="btn btn-primary w-100">프로필 보기</a>
                 </div>
             </div>
         </div>
