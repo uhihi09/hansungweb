@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
 from database import Database
 import os
 from dotenv import load_dotenv
@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 
 load_dotenv()
 app = Flask(__name__, static_folder='static', static_url_path='/static')
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your-secret-key')  # 세션을 위한 시크릿 키
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev')
 
 # 이미지 업로드 설정
 UPLOAD_FOLDER = 'static/uploads'
@@ -60,42 +60,31 @@ def utility_processor():
 @app.route('/')
 def index():
     members = db.get_all_members()
+    print(f"가져온 멤버 수: {len(members)}")  # 디버깅용 로그
+    for member in members:
+        print(f"멤버: {member}")  # 디버깅용 로그
     return render_template('index.html', members=members)
 
-@app.route('/member/<discord_id>')
+@app.route('/profile/<discord_id>')
 def view_profile(discord_id):
-    profile = db.get_profile(discord_id)
     member = db.get_member_by_id(discord_id)
-    discord_profile = db.get_discord_profile(discord_id)
-    return render_template('profile.html', profile=profile, member=member, discord_profile=discord_profile)
+    profile = db.get_profile(discord_id)
+    return render_template('profile.html', member=member, profile=profile)
 
-@app.route('/member/<discord_id>/edit', methods=['GET', 'POST'])
+@app.route('/profile/<discord_id>/edit', methods=['GET', 'POST'])
 def edit_profile(discord_id):
     if request.method == 'POST':
-        profile_data = {
-            "introduction": request.form.get('introduction', ''),
-            "incidents": request.form.get('incidents', ''),
-            "interests": request.form.get('interests', ''),
-            "github": request.form.get('github', ''),
-            "blog": request.form.get('blog', '')
-        }
+        introduction = request.form.get('introduction')
+        profile_image = request.form.get('profile_image')
+        incidents = request.form.get('incidents')
         
-        # 이미지 업로드 처리
-        if 'profile_image' in request.files:
-            file = request.files['profile_image']
-            if file and allowed_file(file.filename):
-                filename = secure_filename(f"{discord_id}_{file.filename}")
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(filepath)
-                profile_data["profile_image"] = f"/static/uploads/{filename}"
-        
-        db.create_or_update_profile(discord_id, profile_data)
+        db.add_profile(discord_id, introduction, profile_image, incidents)
+        flash('프로필이 업데이트되었습니다.')
         return redirect(url_for('view_profile', discord_id=discord_id))
     
-    profile = db.get_profile(discord_id)
     member = db.get_member_by_id(discord_id)
-    discord_profile = db.get_discord_profile(discord_id)
-    return render_template('edit_profile.html', profile=profile, member=member, discord_profile=discord_profile)
+    profile = db.get_profile(discord_id)
+    return render_template('edit_profile.html', member=member, profile=profile)
 
 @app.route('/api/update_profile', methods=['POST'])
 def update_profile():

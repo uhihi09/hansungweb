@@ -9,11 +9,18 @@
             <div class="card h-100">
                 <div class="card-body text-center">
                     <div class="mb-3">
+                        {% if member.avatar_hash %}
                         <img src="https://cdn.discordapp.com/avatars/{{ member.discord_id }}/{{ member.avatar_hash }}.png" 
                              alt="Discord 프로필" 
                              class="rounded-circle mb-2" 
                              style="width: 100px; height: 100px; object-fit: cover;"
                              onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+                        {% else %}
+                        <img src="https://cdn.discordapp.com/embed/avatars/0.png" 
+                             alt="기본 프로필" 
+                             class="rounded-circle mb-2" 
+                             style="width: 100px; height: 100px; object-fit: cover;">
+                        {% endif %}
                         
                         <h5 class="card-title mb-1">{{ member.nickname }}</h5>
                         
